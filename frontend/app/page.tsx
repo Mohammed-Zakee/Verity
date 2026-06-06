@@ -1,4 +1,5 @@
 'use client'
+// Verity Frontend — connects to self-built Playwright scraper + self-built NLP engine
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
@@ -376,8 +377,6 @@ export default function HomePage() {
     animation: { duration: 1200 }
   } as const
 
-  const isHF = data?.reviews?.some(r => r.sentiment?.source === 'huggingface')
-
   // ── Sentiment bar widths ───────────────────────────────────────
   const sentTotal = data ? (data.sentiment_summary.labels.Positive + data.sentiment_summary.labels.Negative +
     data.sentiment_summary.labels.Mixed + data.sentiment_summary.labels.Neutral) || 1 : 1
@@ -493,7 +492,6 @@ export default function HomePage() {
                 <div className="card-head">
                   <span className="card-ico">🧠</span>
                   <h3>Sentiment Intelligence</h3>
-                  {isHF && <span className="ai-badge">✦ AI Model</span>}
                   <span className="badge-unique">UNIQUE</span>
                 </div>
                 <div className="sent-body">
@@ -521,7 +519,7 @@ export default function HomePage() {
                     ))}
                   </div>
                 </div>
-                {isHF && <p style={{fontSize:'0.72rem',color:'#475569',marginTop:'1rem'}}>✦ Powered by Hugging Face RoBERTa sentiment model</p>}
+                <p style={{fontSize:'0.72rem',color:'#475569',marginTop:'1rem'}}>⚙ Powered by Verity&apos;s self-built NLP engine — no third-party AI</p>
               </section>
 
               {/* RED FLAGS */}
