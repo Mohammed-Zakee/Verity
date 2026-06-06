@@ -14,5 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all application files
 COPY . .
 
-# Gunicorn start command binding to PORT environment variable
-CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+# Expose port (Railway will set PORT env var, but EXPOSE is good practice)
+ENV PORT=5000
+EXPOSE 5000
+
+# Set start command using sh -c to guarantee environment variable expansion
+CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:${PORT} --workers 2 --timeout 120"]
