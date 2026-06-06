@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recon — Business Intelligence Scraper</title>
+  <meta name="description" content="AI-powered business scraper that extracts reviews, ratings, sentiment analysis, and competitive intelligence from any business." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- ── BACKGROUND PARTICLES ── -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- ── HEADER ── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">RECON</span>
+        <span class="logo-badge">AI</span>
+      </div>
+      <p class="header-tagline">Business Intelligence, Redefined</p>
+    </div>
+  </header>
+
+  <!-- ── SEARCH PANEL ── -->
+  <main class="main-container">
+    <section class="search-section glass-card" id="search-section">
+      <div class="search-headline">
+        <h1>Drop a business.<br /><span class="gradient-text">We'll tell you everything.</span></h1>
+        <p class="search-sub">From reviews to red flags — Recon extracts, analyzes, and visualizes business intelligence in real time.</p>
+      </div>
+
+      <form class="search-form" id="search-form">
+        <div class="input-group">
+          <label for="company-input">Business Name</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🏢</span>
+            <input type="text" id="company-input" placeholder="e.g. Starbucks, McDonald's, Tesla..." autocomplete="off" required />
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="location-input">Location</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📍</span>
+            <input type="text" id="location-input" placeholder="e.g. New York, London, Dubai..." autocomplete="off" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-scrape" id="scrape-btn">
+          <span class="btn-icon">⚡</span>
+          <span class="btn-text">Run Recon</span>
+        </button>
+      </form>
+
+      <!-- PROGRESS -->
+      <div class="progress-area hidden" id="progress-area">
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner" id="progress-bar"></div>
+        </div>
+        <div class="progress-steps" id="progress-steps">
+          <span class="step active" data-step="0">🔍 Locating</span>
+          <span class="step" data-step="1">📥 Extracting</span>
+          <span class="step" data-step="2">🧠 Analyzing</span>
+          <span class="step" data-step="3">📊 Rendering</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RESULTS ── -->
+    <div id="results-container" class="hidden">
+
+      <!-- BUSINESS IDENTITY CARD -->
+      <section class="glass-card identity-card" id="identity-card">
+        <div class="identity-left">
+          <div class="biz-avatar" id="biz-avatar"></div>
+          <div class="biz-info">
+            <h2 id="biz-name">—</h2>
+            <p id="biz-category" class="biz-category">—</p>
+            <div class="biz-meta">
+              <span id="biz-address" class="meta-item">📍 —</span>
+              <span id="biz-phone"   class="meta-item">📞 —</span>
+              <span id="biz-website" class="meta-item">🌐 —</span>
+            </div>
+          </div>
+        </div>
+        <div class="identity-right">
+          <div class="rating-big" id="rating-display">
+            <span class="rating-number" id="rating-num">—</span>
+            <div class="stars" id="stars-display"></div>
+            <span class="review-count" id="review-count-text">— reviews</span>
+          </div>
+          <div class="export-btns">
+            <button class="btn-export" id="export-json-btn" onclick="exportData('json')">⬇ JSON</button>
+            <button class="btn-export" id="export-csv-btn"  onclick="exportData('csv')">⬇ CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── ROW 1: SENTIMENT + RED FLAGS ── -->
+      <div class="cards-row">
+
+        <!-- SENTIMENT CARD -->
+        <section class="glass-card sentiment-card">
+          <div class="card-header">
+            <span class="card-icon">🧠</span>
+            <h3>Sentiment Intelligence</h3>
+            <span class="badge badge-unique">UNIQUE</span>
+          </div>
+          <div class="sentiment-body">
+            <div class="sentiment-donut">
+              <canvas id="sentiment-chart" width="180" height="180"></canvas>
+              <div class="donut-center">
+                <span class="donut-pct" id="donut-pct">—</span>
+                <span class="donut-label">Positive</span>
+              </div>
+            </div>
+            <div class="sentiment-bars">
+              <div class="sbar-item">
+                <span class="sbar-label">😊 Positive</span>
+                <div class="sbar-track"><div class="sbar-fill sbar-pos" id="bar-pos"></div></div>
+                <span class="sbar-count" id="cnt-pos">0</span>
+              </div>
+              <div class="sbar-item">
+                <span class="sbar-label">😤 Negative</span>
+                <div class="sbar-track"><div class="sbar-fill sbar-neg" id="bar-neg"></div></div>
+                <span class="sbar-count" id="cnt-neg">0</span>
+              </div>
+              <div class="sbar-item">
+                <span class="sbar-label">😐 Mixed</span>
+                <div class="sbar-track"><div class="sbar-fill sbar-mix" id="bar-mix"></div></div>
+                <span class="sbar-count" id="cnt-mix">0</span>
+              </div>
+              <div class="sbar-item">
+                <span class="sbar-label">😶 Neutral</span>
+                <div class="sbar-track"><div class="sbar-fill sbar-neu" id="bar-neu"></div></div>
+                <span class="sbar-count" id="cnt-neu">0</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RED FLAGS CARD -->
+        <section class="glass-card red-flags-card">
+          <div class="card-header">
+            <span class="card-icon">🚨</span>
+            <h3>Red Flag Detector™</h3>
+            <span class="badge badge-unique">UNIQUE</span>
+          </div>
+          <div id="red-flags-body">
+            <p class="empty-msg">No red flags detected — or no reviews found yet.</p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ── ROW 2: TIMELINE + THEMES ── -->
+      <div class="cards-row">
+
+        <!-- TIMELINE CARD -->
+        <section class="glass-card timeline-card">
+          <div class="card-header">
+            <span class="card-icon">📈</span>
+            <h3>Rating Timeline</h3>
+            <span class="badge badge-unique">UNIQUE</span>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="timeline-chart"></canvas>
+          </div>
+        </section>
+
+        <!-- THEMES CARD -->
+        <section class="glass-card themes-card">
+          <div class="card-header">
+            <span class="card-icon">🎯</span>
+            <h3>Theme Analysis</h3>
+          </div>
+          <div id="themes-body"></div>
+        </section>
+
+      </div>
+
+      <!-- ── ROW 3: WORD CLOUD (full width) ── -->
+      <section class="glass-card wordcloud-card">
+        <div class="card-header">
+          <span class="card-icon">💬</span>
+          <h3>Review Word Cloud</h3>
+          <span class="badge badge-unique">UNIQUE</span>
+        </div>
+        <canvas id="word-cloud-canvas" width="900" height="280"></canvas>
+      </section>
+
+      <!-- ── HOURS ── -->
+      <section class="glass-card hours-card hidden" id="hours-section">
+        <div class="card-header">
+          <span class="card-icon">🕐</span>
+          <h3>Opening Hours</h3>
+        </div>
+        <div class="hours-grid" id="hours-grid"></div>
+      </section>
+
+      <!-- ── REVIEWS LIST ── -->
+      <section class="glass-card reviews-section">
+        <div class="card-header reviews-header">
+          <span class="card-icon">💬</span>
+          <h3>All Reviews <span class="review-badge" id="review-badge">0</span></h3>
+          <div class="review-filters">
+            <button class="filter-btn active" data-filter="all"   onclick="filterReviews('all',this)">All</button>
+            <button class="filter-btn"         data-filter="5"    onclick="filterReviews('5',this)">★5</button>
+            <button class="filter-btn"         data-filter="4"    onclick="filterReviews('4',this)">★4</button>
+            <button class="filter-btn"         data-filter="3"    onclick="filterReviews('3',this)">★3</button>
+            <button class="filter-btn"         data-filter="neg"  onclick="filterReviews('neg',this)">⚠ Low</button>
+            <button class="filter-btn"         data-filter="pos"  onclick="filterReviews('pos',this)">✓ Positive</button>
+          </div>
+        </div>
+        <div class="reviews-list" id="reviews-list"></div>
+      </section>
+
+    </div><!-- /results-container -->
+
+    <!-- ERROR TOAST -->
+    <div class="toast hidden" id="error-toast">
+      <span class="toast-icon">⚠</span>
+      <span class="toast-msg" id="toast-msg">An error occurred.</span>
+    </div>
+
+  </main>
+
+  <footer class="site-footer">
+    <p>Recon — Business Intelligence Scraper &nbsp;·&nbsp; Built with ⚡ by Antigravity</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
