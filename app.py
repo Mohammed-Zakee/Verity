@@ -205,6 +205,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
     """
     Drives a real Chromium browser to Google Maps.
     No external scraping API — we do it ourselves.
+    Uses a robust 2-step bypass to avoid the "limited view" restriction on signed-out users.
     """
     result = {
         "company":      company,
@@ -248,7 +249,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
         page = await context.new_page()
 
         try:
-            # ── Navigate ──────────────────────────────────────────────────
+            # ── Step 1: Initial search to extract basic info & discover category ──
             query      = f"{company} {location}".replace(" ", "+")
             search_url = f"https://www.google.com/maps/search/{query}"
             await page.goto(search_url, wait_until="domcontentloaded", timeout=35000)
@@ -260,7 +261,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 await first.click()
                 await page.wait_for_timeout(3000)
 
-            # ── Business Name ─────────────────────────────────────────────
+            # Extract name
             for selector in ["h1.DUwDvf", "h1.fontHeadlineLarge", "[data-attrid='title']"]:
                 try:
                     el = page.locator(selector).first
@@ -271,7 +272,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                     pass
             result["name"] = result["name"] or company
 
-            # ── Category ──────────────────────────────────────────────────
+            # Extract category
             for selector in ["button[jsaction*='category']", ".DkEaL", ".fontBodyMedium.dmRXdf"]:
                 try:
                     el = page.locator(selector).first
@@ -281,7 +282,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 except Exception:
                     pass
 
-            # ── Rating ────────────────────────────────────────────────────
+            # Extract rating
             try:
                 rt = await page.locator("div.F7nice span[aria-hidden='true']").first.inner_text(timeout=4000)
                 result["rating"] = float(rt.strip().replace(",", "."))
@@ -294,7 +295,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 except Exception:
                     pass
 
-            # ── Review count ──────────────────────────────────────────────
+            # Extract review count
             try:
                 ct = await page.locator("div.F7nice span[aria-label*='review']").first.inner_text(timeout=3000)
                 m  = re.search(r"([\d,]+)", ct)
@@ -309,7 +310,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 except Exception:
                     pass
 
-            # ── Address ───────────────────────────────────────────────────
+            # Extract address
             try:
                 el = page.locator("[data-item-id='address']")
                 if await el.count() > 0:
@@ -317,7 +318,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
             except Exception:
                 pass
 
-            # ── Phone ─────────────────────────────────────────────────────
+            # Extract phone
             try:
                 el = page.locator("[data-item-id*='phone']")
                 if await el.count() > 0:
@@ -325,7 +326,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
             except Exception:
                 pass
 
-            # ── Website ───────────────────────────────────────────────────
+            # Extract website
             try:
                 el = page.locator("[data-item-id='authority']")
                 if await el.count() > 0:
@@ -333,7 +334,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
             except Exception:
                 pass
 
-            # ── Opening Hours ─────────────────────────────────────────────
+            # Extract opening hours
             try:
                 hours_btn = page.locator("[data-item-id='oh']").first
                 if await hours_btn.count() > 0:
@@ -352,10 +353,52 @@ async def scrape_google_maps(company: str, location: str) -> dict:
             except Exception:
                 pass
 
-            # ── Navigate to Reviews tab ───────────────────────────────────
+            # ── Step 2: Navigate via Category list search to bypass limited view ──
+            # This forces Google Maps to load the business within the search list context,
+            # which preserves the full reviews tab for signed-out users.
+            list_category = result["category"] or "business"
+            list_query = f"{list_category} near {location}".replace(" ", "+")
+            list_url = f"https://www.google.com/maps/search/{list_query}"
+            
+            print(f"Bypassing limited view. Searching list: {list_url}")
+            await page.goto(list_url, wait_until="domcontentloaded", timeout=35000)
+            await page.wait_for_timeout(3500)
+            
+            # Find the business link in the search results list
+            links = await page.locator('a[href*="/maps/place/"]').all()
+            target_link = None
+            target_name_lower = result["name"].lower()
+            
+            for link in links:
+                try:
+                    aria = await link.get_attribute("aria-label", timeout=1000) or ""
+                    text = await link.inner_text(timeout=1000) or ""
+                    if target_name_lower in aria.lower() or target_name_lower in text.lower():
+                        target_link = link
+                        break
+                except Exception:
+                    pass
+            
+            if target_link:
+                print(f"Found match '{result['name']}' in list. Clicking to load full view...")
+                await target_link.click()
+                await page.wait_for_timeout(4000)
+            else:
+                print(f"Target '{result['name']}' not found in search list. Falling back to first result...")
+                if len(links) > 0:
+                    await links[0].click()
+                    await page.wait_for_timeout(4000)
+                else:
+                    # If we couldn't find a list, navigate back to original search and hope for the best
+                    print("List search empty. Returning to direct url...")
+                    await page.goto(search_url, wait_until="domcontentloaded", timeout=35000)
+                    await page.wait_for_timeout(3000)
+
+            # ── Step 3: Navigate to Reviews tab ──
             try:
                 for sel in [
                     "button[aria-label*='Reviews']",
+                    "button[aria-label*='reviews']",
                     "button[aria-label*='review']",
                     "div[role='tab']:has-text('Reviews')",
                 ]:
@@ -389,7 +432,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 except Exception:
                     break
 
-            # ── Extract Reviews ───────────────────────────────────────────
+            # ── Step 4: Extract Reviews ──
             review_els = await page.locator("div[data-review-id]").all()
             for el in review_els[:50]:
                 try:
@@ -515,25 +558,34 @@ def scrape():
     try:
         raw       = asyncio.run(scrape_google_maps(company, location))
         processed = post_process(raw)
-
-        # Surface a clean error if no useful data came back
-        if not processed.get("name") and not processed["reviews"]:
-            return jsonify({
-                "error": processed.get("error") or f"No results found for '{company}' in '{location}'."
-            }), 404
-
-        return jsonify(processed)
-
     except RuntimeError as e:
         # asyncio.run() inside an already-running loop (gunicorn worker edge case)
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor() as pool:
             future = pool.submit(asyncio.run, scrape_google_maps(company, location))
             raw    = future.result(timeout=120)
-        return jsonify(post_process(raw))
-
+        processed = post_process(raw)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+    # Check for scraper error when no reviews were successfully retrieved
+    if processed.get("error") and not processed.get("reviews"):
+        return jsonify({"error": processed["error"]}), 500
+
+    # Verify if we actually found and scraped any real business details
+    has_details = (
+        processed.get("address") or 
+        processed.get("phone") or 
+        processed.get("website") or 
+        processed.get("category") or 
+        processed.get("rating") is not None or 
+        processed.get("reviews")
+    )
+    if not has_details:
+        err_msg = processed.get("error") or f"Could not find or scrape business '{company}' in '{location}'."
+        return jsonify({"error": err_msg}), 404
+
+    return jsonify(processed)
 
 
 if __name__ == "__main__":
