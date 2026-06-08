@@ -232,9 +232,6 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                 "--disable-setuid-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
-                "--no-first-run",
-                "--no-zygote",
-                "--single-process",
             ]
         )
         context = await browser.new_context(
