@@ -19,6 +19,7 @@ interface Review {
   text: string
   sentiment: { label: string; score: number; source?: string }
   avatar?: string
+  photos?: string[]
 }
 
 interface ScrapedData {
@@ -650,6 +651,19 @@ export default function HomePage() {
                         </span>
                       </div>
                       <div className="rev-text">{r.text || 'No review text.'}</div>
+                      {r.photos && r.photos.length > 0 && (
+                        <div className="rev-photos">
+                          {r.photos.map((photoUrl, pIdx) => (
+                            <img
+                              key={pIdx}
+                              src={photoUrl}
+                              alt={`Review photo ${pIdx + 1}`}
+                              className="rev-photo-thumb"
+                              onClick={() => window.open(photoUrl, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))
                 }

@@ -219,6 +219,11 @@ footer { text-align: center; padding: 1.5rem; font-size: 0.76rem; color: var(--t
 /* EMPTY STATE */
 .empty-msg { color: var(--text-3); font-size: 0.84rem; }
 
+/* REVIEW PHOTOS */
+.rev-photos { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+.rev-photo-thumb { width: 76px; height: 76px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--glass-border); cursor: pointer; transition: var(--t); }
+.rev-photo-thumb:hover { transform: scale(1.05); border-color: var(--cyan); box-shadow: 0 0 12px rgba(0,229,255,0.35); }
+
 /* UTIL */
 .hidden { display: none !important; }
 @media (max-width: 768px) {

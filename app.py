@@ -484,6 +484,20 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                         except Exception:
                             pass
 
+                    # Extract review photos
+                    photos = []
+                    try:
+                        buttons = await el.locator("button").all()
+                        for btn_el in buttons:
+                            style_attr = await btn_el.get_attribute("style") or ""
+                            aria_attr = await btn_el.get_attribute("aria-label") or ""
+                            if "background-image" in style_attr and "review" in aria_attr.lower():
+                                m = re.search(r'url\([\'"]?([^\'"]+?)[\'"]?\)', style_attr)
+                                if m:
+                                    photos.append(m.group(1))
+                    except Exception:
+                        pass
+
                     sentiment = analyze_sentiment(text)
                     result["reviews"].append({
                         "author":    author or "Anonymous",
@@ -491,6 +505,7 @@ async def scrape_google_maps(company: str, location: str) -> dict:
                         "rating":    rating_val,
                         "text":      text,
                         "sentiment": sentiment,
+                        "photos":    photos,
                     })
                 except Exception:
                     continue
