@@ -1,207 +1,89 @@
-<div align="center">
+# Verity
 
-<br/>
+A business-review exploration project with a browser-driven collection API, keyword-based sentiment analysis, and a visual reporting interface.
 
-```
- ██╗   ██╗███████╗██████╗ ██╗████████╗██╗   ██╗
- ██║   ██║██╔════╝██╔══██╗██║╚══██╔══╝╚██╗ ██╔╝
- ██║   ██║█████╗  ██████╔╝██║   ██║    ╚████╔╝ 
- ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║   ██║     ╚██╔╝  
-  ╚████╔╝ ███████╗██║  ██║██║   ██║      ██║   
-   ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝      ╚═╝   
-```
+[Live interface](https://verity-orpin-omega.vercel.app/) · [Portfolio case study](https://mohammed-zakee.github.io/Portfolio/case-studies/verity.html)
 
-### **Business Intelligence, Redefined.**
+![Actual public Verity interface](docs/images/verity-interface.webp)
 
-*Give Verity a company name and location. It tells you everything.*
+## Problem and scope
 
-<br/>
+A single star rating does not explain recurring praise, complaints, or changes over time. Verity brings review text, sentiment labels, themes, and a rating timeline into one interface. The screenshot shows the real public landing page; it does not imply that a live collection request or downstream analysis succeeded.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-3.0-000000?style=for-the-badge&logo=flask&logoColor=white)
-![Vercel](https://img.shields.io/badge/Vercel-Frontend-black?style=for-the-badge&logo=vercel)
-![Railway](https://img.shields.io/badge/Railway-Backend-8B5CF6?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-purple?style=for-the-badge)
+## Current implementation
 
-<br/>
+- **Frontend:** Next.js 14, React, TypeScript, Chart.js.
+- **API:** Python, Flask, Flask-CORS.
+- **Collection:** Playwright with Chromium.
+- **Analysis:** custom positive/negative word sets, immediate-word negation handling, fixed label thresholds, theme matching, and word frequencies.
+- **Frontend exports:** JSON, CSV, Excel using SheetJS, and PDF using jsPDF.
 
-</div>
+The current code uses a rule-based NLP engine. It does **not** call Hugging Face or SerpAPI; earlier descriptions of those integrations no longer describe this version.
 
----
-
-## Architecture
-
-```
-┌─────────────────────────┐       ┌──────────────────────────────┐
-│   FRONTEND  (Vercel)    │ ────▶ │   BACKEND API  (Railway)     │
-│                         │       │                              │
-│   Next.js 14            │       │   Flask + Playwright         │
-│   Chart.js charts       │◀───── │   SerpAPI scraping           │
-│   Canvas word cloud     │       │   Hugging Face AI sentiment  │
-│   4-format download     │       │   Red Flag Detector          │
-│                         │       │   Theme Analysis Engine      │
-│   vercel.com            │       │   railway.app                │
-└─────────────────────────┘       └──────────────────────────────┘
+```mermaid
+flowchart LR
+    A[Business name and location] --> B[Next.js interface]
+    B --> C[Flask API]
+    C --> D[Playwright collection]
+    D --> E[Rule-based analysis]
+    E --> B
+    B --> F[Charts and exports]
 ```
 
----
+## Run locally
 
-## What Verity Does
+Prerequisites: Python 3.11+ and a Node.js version compatible with the frontend package.
 
-Enter any business name and location. Verity:
+Start the API from the repository root:
 
-1. **Scrapes Google Maps** via SerpAPI — business name, address, phone, website, rating, hours, up to 50 reviews
-2. **Analyzes every review** with Hugging Face RoBERTa AI model (falls back to keyword NLP)
-3. **Renders a full intelligence dashboard** with charts, word clouds, and theme breakdowns
-4. **Lets you export** in 4 formats — JSON, CSV, Excel, PDF
-
----
-
-## Unique Features
-
-| Feature | Description |
-|---|---|
-| 🧠 **Sentiment Intelligence Engine** | AI-powered (Hugging Face RoBERTa) sentiment per review — Positive / Negative / Mixed / Neutral — shown as a live donut chart |
-| 🚨 **Red Flag Detector™** | Scans 1–2★ reviews for the most repeated complaint words and shows a ranked danger-meter |
-| 📈 **Rating Timeline** | Plots average rating month-by-month — reveals if a business is improving or declining |
-| 🎯 **Theme Analysis** | Auto-categorizes reviews into 6 themes (Service, Food, Wait Time, Cleanliness, Value, Ambience) with positive/negative breakdown |
-| 💬 **Word Cloud** | Frequency-weighted word cloud rendered natively on `<canvas>` — no third-party library |
-| ⬇ **4-Format Export** | Download the full dataset as **JSON**, **CSV**, **Excel** (multi-sheet), or a formatted **PDF report** |
-
----
-
-## Project Structure
-
-```
-Verity/
-├── frontend/               ← Next.js app → deploy to Vercel
-│   ├── app/
-│   │   ├── page.tsx        ← Full dashboard UI
-│   │   ├── layout.tsx
-│   │   └── globals.css
-│   ├── next.config.js
-│   ├── vercel.json
-│   └── package.json
-│
-├── backend/                ← Flask API → deploy to Railway
-│   ├── app.py              ← Scraper + Sentiment Engine + REST API
-│   ├── requirements.txt
-│   ├── Procfile
-│   ├── railway.json
-│   └── runtime.txt
-│
-└── README.md
-```
-
----
-
-## Local Development
-
-### Backend
-
-```bash
-cd backend
-pip install -r requirements.txt
+```sh
+python -m venv .venv
+# Activate .venv using the command appropriate for your shell.
+python -m pip install -r backend/requirements.txt
 python -m playwright install chromium
-
-# Optional — set API keys for full functionality
-export SERP_API_KEY=your_serpapi_key
-export HF_API_KEY=your_huggingface_token
-
-python app.py
-# Runs at http://localhost:5000
+python backend/app.py
 ```
 
-### Frontend
+In a separate terminal:
 
-```bash
+```sh
 cd frontend
 npm install
-
-# Point to your local backend
-echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local
-
 npm run dev
-# Runs at http://localhost:3000
 ```
 
----
+Set `NEXT_PUBLIC_API_URL=http://localhost:5000` in `frontend/.env.local` before starting the frontend. Open `http://localhost:3000`. Keep local API addresses out of a production deployment; configure the deployed API origin there.
 
-## Production Deployment
+## Focused behavior checks
 
-### Step 1 — Deploy Backend to Railway
+```sh
+python tests/test_sentiment.py
+```
 
-1. Go to [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub**
-2. Select the `Verity` repo → set **Root Directory** to `/backend`
-3. Add environment variables:
-   ```
-   SERP_API_KEY=your_serpapi_key        # serpapi.com — 100 free searches/month
-   HF_API_KEY=your_huggingface_token    # huggingface.co — free
-   FRONTEND_URL=https://your-app.vercel.app
-   ```
-4. Railway will auto-detect the `Procfile` and install Playwright Chromium
-5. Copy the generated public URL (e.g. `https://verity-backend.railway.app`)
+Eight focused checks cover positive, negative, neutral, mixed, negated-positive, negated-negative, case/punctuation, and empty input. They load the analysis function without starting Flask, a browser, or a network request. These checks passed during the portfolio review; they are **not** a benchmark of real-world sentiment accuracy.
 
-### Step 2 — Deploy Frontend to Vercel
+## Repository guide
 
-1. Go to [vercel.com](https://vercel.com) → **New Project** → **Import from GitHub**
-2. Select `Verity` → set **Root Directory** to `/frontend`
-3. Add environment variable:
-   ```
-   NEXT_PUBLIC_API_URL=https://verity-backend.railway.app
-   ```
-4. Click **Deploy** — done ✅
-
----
-
-## API Keys
-
-| Key | Where to Get | Free Tier |
-|---|---|---|
-| `SERP_API_KEY` | [serpapi.com](https://serpapi.com) | 100 searches/month |
-| `HF_API_KEY` | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | Free inference API |
-
-> Without `SERP_API_KEY`, the backend falls back to Playwright (works locally, not on Railway).  
-> Without `HF_API_KEY`, sentiment analysis uses the built-in keyword engine (no API needed).
-
----
-
-## Download Formats
-
-| Format | Content |
+| Path | Purpose |
 |---|---|
-| **JSON** | Full scraped data object including all analysis |
-| **CSV** | All reviews with author, date, rating, sentiment, AI source, text |
-| **Excel (.xlsx)** | 4 sheets: Overview, Reviews, Themes, Rating Timeline |
-| **PDF** | Formatted report with business summary, sentiment breakdown, red flags, and reviews |
+| `backend/app.py` | Collection, analysis, API health and scrape routes |
+| `frontend/app/page.tsx` | Search interface, charts, and exports |
+| `backend/requirements.txt` | Python dependencies |
+| `Dockerfile` | Container deployment using the backend directory |
+| `tests/test_sentiment.py` | Standalone sentiment behavior checks |
 
----
+A root-level `app.py` and older static/template files also exist. The root Dockerfile uses `backend/`; this guide follows that API and the Next.js frontend.
 
-## Tech Stack
+## Trade-offs and limitations
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14, TypeScript, Vanilla CSS |
-| Charts | Chart.js 4 + react-chartjs-2 |
-| Word Cloud | Custom `<canvas>` renderer |
-| PDF Export | jsPDF |
-| Excel Export | SheetJS (xlsx) |
-| Backend | Python 3.11, Flask 3.0, Gunicorn |
-| Scraping | SerpAPI (Google Maps) + Playwright fallback |
-| AI Sentiment | Hugging Face RoBERTa + keyword NLP fallback |
-| Deployment | Vercel (frontend) + Railway (backend) |
+- Keyword rules are transparent and inexpensive but can misread sarcasm, context, and multilingual reviews.
+- Collection depends on the external site's structure, access conditions, and the deployed backend. No collection success-rate or uptime benchmark is documented.
+- Relative date grouping is approximate. Collected reviews are a sample and should not be treated as a complete or unbiased business assessment.
+- Public interface availability is separate from end-to-end pipeline validation.
+- No accuracy, user-adoption, or business-impact figure is claimed here.
 
----
+## Next engineering steps
 
-## License
+Create a labeled review dataset, compare contextual models against the baseline, add collection fixtures and end-to-end deployment checks, and improve coverage of multilingual text and error states.
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-
-Built with ⚡ — *Because every business has a truth worth knowing.*
-
-</div>
+This README describes repository scope. It does not assign individual module ownership or team size.
