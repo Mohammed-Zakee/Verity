@@ -86,4 +86,4 @@ A root-level `app.py` and older static/template files also exist. The root Docke
 
 Create a labeled review dataset, compare contextual models against the baseline, add collection fixtures and end-to-end deployment checks, and improve coverage of multilingual text and error states.
 
-This README describes repository scope. It does not assign individual module ownership or team size.
+Solo project by Mohammed Zakee (Zakee Nowfal). Developed to make Google Maps business information and image collection easier to access, alongside the review-analysis workflow described above.
